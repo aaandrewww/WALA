@@ -80,20 +80,26 @@ public class MutableSparseIntSet extends SparseIntSet implements MutableIntSet {
   public boolean remove(int value) {
 		if (elements != null) {
 			int remove;
-			for (remove = 0; remove < size; remove++) {
-				if (elements[remove] >= value) {
-					break;
-				}
+      // special case the max element
+      if (value == max()) {
+        remove = size - 1;
 			}
-			if (remove == size) {
-				return false;
+ else {
+        for (remove = 0; remove < size; remove++) {
+          if (elements[remove] >= value) {
+            break;
+          }
+        }
+        if (remove == size) {
+          return false;
+        }
 			}
 			if (elements[remove] == value) {
 				if (size == 1) {
 					elements = null;
 					size = 0;
 				} else {
-					if (remove < size) {
+          if (remove < size - 1) {
 						System.arraycopy(elements, remove + 1, elements,
 								remove, size - remove - 1);
 					}
