@@ -154,6 +154,14 @@ public final class TypeReference implements Serializable {
 
   public final static TypeReference JavaLangClass = findOrCreate(ClassLoaderReference.Primordial, JavaLangClassName);
 
+  private final static TypeName JavaLangInvokeMethodHandleName = TypeName.string2TypeName("Ljava/lang/invoke/MethodHandle");
+
+  public final static TypeReference JavaLangInvokeMethodHandle = findOrCreate(ClassLoaderReference.Primordial, JavaLangInvokeMethodHandleName);
+
+  private final static TypeName JavaLangInvokeMethodTypeName = TypeName.string2TypeName("Ljava/lang/invoke/MethodType");
+
+  public final static TypeReference JavaLangInvokeMethodType = findOrCreate(ClassLoaderReference.Primordial, JavaLangInvokeMethodTypeName);
+
   private final static TypeName JavaLangClassCastExceptionName = TypeName.string2TypeName("Ljava/lang/ClassCastException");
 
   public final static TypeReference JavaLangClassCastException = findOrCreate(ClassLoaderReference.Primordial,
@@ -406,6 +414,39 @@ public final class TypeReference implements Serializable {
    */
   public static synchronized TypeReference findOrCreate(ClassLoaderReference cl, String typeName) {
     return findOrCreate(cl, TypeName.string2TypeName(typeName));
+  }
+
+  public static synchronized TypeReference find(ClassLoaderReference cl, String typeName) {
+    return find(cl, TypeName.string2TypeName(typeName));
+  }
+
+  /**
+   * Find the canonical TypeReference instance for the given pair. May return null.
+   * 
+   * @param cl the classloader (defining/initiating depending on usage)
+   */
+  public static synchronized TypeReference find(ClassLoaderReference cl, TypeName typeName) {
+    if (cl == null) {
+      throw new IllegalArgumentException("null cl");
+    }
+    TypeReference p = primitiveMap.get(typeName);
+    if (p != null) {
+      return p;
+    }
+    // Next actually findOrCreate the type reference using the proper
+    // classloader.
+    // [This is the only allocation site for TypeReference]
+    if (typeName.isArrayType()) {
+      TypeName e = typeName.getInnermostElementType();
+      if (e.isPrimitiveType()) {
+        cl = ClassLoaderReference.Primordial;
+      }
+    }
+
+    Key key = new Key(cl, typeName);
+    TypeReference val = dictionary.get(key);
+
+    return val;
   }
 
   public static TypeReference findOrCreateArrayOf(TypeReference t) {

@@ -56,6 +56,12 @@ public class AstJavaSSAPropagationCallGraphBuilder extends AstSSAPropagationCall
     return false;
   }
 
+  @Override
+  protected AbstractFieldPointerKey fieldKeyForUnknownWrites(AbstractFieldPointerKey fieldKey) {
+    assert false;
+    return null;
+  }
+
   // ///////////////////////////////////////////////////////////////////////////
   //
   // enclosing object pointer flow support
@@ -174,7 +180,7 @@ public class AstJavaSSAPropagationCallGraphBuilder extends AstSSAPropagationCall
         system.newSideEffect(new UnaryOperator<PointsToSetVariable>() {
           @Override
           public byte evaluate(PointsToSetVariable lhs, PointsToSetVariable rhs) {
-            IntSetVariable tv = (IntSetVariable) rhs;
+            IntSetVariable tv = rhs;
             if (tv.getValue() != null) {
               tv.getValue().foreach(new IntSetAction() {
                 @Override

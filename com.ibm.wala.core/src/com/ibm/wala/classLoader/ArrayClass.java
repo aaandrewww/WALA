@@ -14,7 +14,6 @@ import static com.ibm.wala.types.TypeName.ArrayMask;
 import static com.ibm.wala.types.TypeName.ElementBits;
 import static com.ibm.wala.types.TypeName.PrimitiveMask;
 
-import java.io.InputStream;
 import java.io.Reader;
 import java.util.Collection;
 import java.util.Collections;
@@ -77,6 +76,13 @@ public class ArrayClass implements IClass, Constants {
   @Override
   public TypeName getName() {
     return getReference().getName();
+  }
+
+  /**
+   * Does this class represent an array of primitives?
+   */
+  public boolean isOfPrimitives() {
+    return this.type.getInnermostElementType().isPrimitiveType();
   }
 
   /*

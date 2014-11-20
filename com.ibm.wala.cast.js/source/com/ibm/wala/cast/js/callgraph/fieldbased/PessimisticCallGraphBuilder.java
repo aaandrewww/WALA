@@ -15,6 +15,7 @@ import java.util.Iterator;
 import com.ibm.wala.cast.js.callgraph.fieldbased.flowgraph.FlowGraph;
 import com.ibm.wala.cast.js.callgraph.fieldbased.flowgraph.vertices.FuncVertex;
 import com.ibm.wala.cast.js.callgraph.fieldbased.flowgraph.vertices.VertexFactory;
+import com.ibm.wala.cast.js.ipa.summaries.JavaScriptConstructorFunctions;
 import com.ibm.wala.cast.js.ssa.JavaScriptInvoke;
 import com.ibm.wala.cast.js.types.JavaScriptTypes;
 import com.ibm.wala.cast.loader.AstMethod;
@@ -23,6 +24,7 @@ import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.AnalysisCache;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
+import com.ibm.wala.ipa.callgraph.MethodTargetSelector;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.ssa.DefUse;
 import com.ibm.wala.ssa.IR;
@@ -40,8 +42,8 @@ import com.ibm.wala.util.MonitorUtil.IProgressMonitor;
  *
  */
 public class PessimisticCallGraphBuilder extends FieldBasedCallGraphBuilder {
-	public PessimisticCallGraphBuilder(IClassHierarchy cha,	AnalysisOptions options, AnalysisCache cache) {
-		super(cha, options, cache);
+	public PessimisticCallGraphBuilder(IClassHierarchy cha,	AnalysisOptions options, AnalysisCache cache, boolean supportFullPointerAnalysis) {
+		super(cha, options, cache, supportFullPointerAnalysis);
 	}
 
 	@Override
@@ -112,7 +114,7 @@ public class PessimisticCallGraphBuilder extends FieldBasedCallGraphBuilder {
 						
 						// yes, so add edges from arguments to parameters...
 						for(int i=2;i<use_invk.getNumberOfParameters();++i)
-							flowgraph.addEdge(factory.makeVarVertex(caller, use_invk.getUse(i)), factory.makeParamVertex(callee, i-1));
+							flowgraph.addEdge(factory.makeVarVertex(caller, use_invk.getUse(i)), factory.makeParamVertex(callee, i));
 						
 						// ...and from return to result
 						flowgraph.addEdge(factory.makeRetVertex(callee), factory.makeVarVertex(caller, use.getDef()));

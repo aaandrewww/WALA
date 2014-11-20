@@ -57,7 +57,7 @@ public class Mangler {
 
   public static void main(String[] args) throws Exception {
     for (int i = 0; i < 1; i++) {
-      instrumenter = new OfflineInstrumenter();
+      instrumenter = new OfflineInstrumenter(true);
 
       Writer w = new BufferedWriter(new FileWriter("report", false));
 
@@ -67,6 +67,7 @@ public class Mangler {
         seed = Integer.parseInt(args[0]);
       } catch (NumberFormatException ex) {
         System.err.println("Invalid number: " + args[0]);
+        w.close();
         return;
       }
 

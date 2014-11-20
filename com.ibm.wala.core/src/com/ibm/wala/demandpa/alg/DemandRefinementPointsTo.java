@@ -111,7 +111,6 @@ import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.SSAAbstractInvokeInstruction;
 import com.ibm.wala.ssa.SSAArrayStoreInstruction;
 import com.ibm.wala.ssa.SSAInstruction;
-import com.ibm.wala.ssa.SSAInvokeInstruction;
 import com.ibm.wala.ssa.SSANewInstruction;
 import com.ibm.wala.ssa.SSAPutInstruction;
 import com.ibm.wala.util.Predicate;
@@ -409,7 +408,7 @@ public class DemandRefinementPointsTo extends AbstractDemandPointsTo {
    * @return a {@link PointsToResult} indicating whether a points-to set satisfying the predicate was computed
    * @throws IllegalArgumentException if <code>pk</code> is not a {@link LocalPointerKey}; to eventually be fixed
    */
-  public PointsToResult pointsToPassesPred(PointerKey pk, Predicate<InstanceKey> ikeyPred, PointerAnalysis pa)
+  public PointsToResult pointsToPassesPred(PointerKey pk, Predicate<InstanceKey> ikeyPred, PointerAnalysis<InstanceKey> pa)
       throws IllegalArgumentException {
     if (!(pk instanceof com.ibm.wala.ipa.callgraph.propagation.LocalPointerKey)) {
       throw new IllegalArgumentException("only locals for now");
@@ -1375,7 +1374,7 @@ public class DemandRefinementPointsTo extends AbstractDemandPointsTo {
 
           }
         }
-        SSAInvokeInstruction callInstr = g.getInstrReturningTo(localPk);
+        SSAAbstractInvokeInstruction callInstr = g.getInstrReturningTo(localPk);
         if (callInstr != null) {
           CGNode caller = localPk.getNode();
           boolean isExceptional = localPk.getValueNumber() == callInstr.getException();
@@ -1669,8 +1668,8 @@ public class DemandRefinementPointsTo extends AbstractDemandPointsTo {
         LocalPointerKey localPk = (LocalPointerKey) curPk;
         CGNode caller = localPk.getNode();
         // from actual parameter to callee
-        for (Iterator<SSAInvokeInstruction> iter = g.getInstrsPassingParam(localPk); iter.hasNext();) {
-          SSAInvokeInstruction callInstr = iter.next();
+        for (Iterator<SSAAbstractInvokeInstruction> iter = g.getInstrsPassingParam(localPk); iter.hasNext();) {
+          SSAAbstractInvokeInstruction callInstr = iter.next();
           for (int i = 0; i < callInstr.getNumberOfUses(); i++) {
             if (localPk.getValueNumber() != callInstr.getUse(i))
               continue;
@@ -2046,7 +2045,7 @@ public class DemandRefinementPointsTo extends AbstractDemandPointsTo {
    */
   @SuppressWarnings("unused")
   private boolean doTopLevelTraversal(PointerKey pk, final Predicate<InstanceKey> pred, final PointsToComputer ptoComputer,
-      PointerAnalysis pa) {
+      PointerAnalysis<InstanceKey> pa) {
     final Set<PointerKeyAndState> visited = HashSetFactory.make();
     final LinkedList<PointerKeyAndState> worklist = new LinkedList<PointerKeyAndState>();
 
@@ -2162,7 +2161,7 @@ public class DemandRefinementPointsTo extends AbstractDemandPointsTo {
 
             }
           }
-          SSAInvokeInstruction callInstr = g.getInstrReturningTo(localPk);
+          SSAAbstractInvokeInstruction callInstr = g.getInstrReturningTo(localPk);
           if (callInstr != null) {
             CGNode caller = localPk.getNode();
             boolean isExceptional = localPk.getValueNumber() == callInstr.getException();
@@ -2457,9 +2456,9 @@ public class DemandRefinementPointsTo extends AbstractDemandPointsTo {
     return true;
   }
 
-  private boolean predHoldsForPk(PointerKey curPk, Predicate<InstanceKey> pred, PointerAnalysis pa) {
+  private boolean predHoldsForPk(PointerKey curPk, Predicate<InstanceKey> pred, PointerAnalysis<InstanceKey> pa) {
     PointerKey curPkForPAHeapModel = convertToHeapModel(curPk, pa.getHeapModel());
-    OrdinalSet<? extends InstanceKey> pointsToSet = pa.getPointsToSet(curPkForPAHeapModel);
+    OrdinalSet<InstanceKey> pointsToSet = pa.getPointsToSet(curPkForPAHeapModel);
     for (InstanceKey ik : pointsToSet) {
       if (!pred.test(ik)) {
         return false;

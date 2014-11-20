@@ -175,6 +175,10 @@ public class InducedCFG extends AbstractCFG<SSAInstruction, InducedCFG.BasicBloc
       }
     }
 
+    assert(instructions.length <= r.length);
+    if (DEBUG) {
+      System.err.println("Searching " + instructions.length + " instructions for basic clocks and Phi/Pi");
+    }
     BasicBlock b = null;
     for (int i = 0; i < r.length; i++) {
       if (r[i]) {
@@ -184,10 +188,14 @@ public class InducedCFG extends AbstractCFG<SSAInstruction, InducedCFG.BasicBloc
         while (instructions[j] instanceof SSAPhiInstruction) {
           b.addPhi((SSAPhiInstruction) instructions[j]);
           j++;
+          if (j >= instructions.length) {
+            break;
+          }
         }
 
         if (DEBUG) {
-          System.err.println(("Add basic block " + b));
+          System.err.println(("Add basic block " + b.getNumber() + " (starting from " + b.getFirstInstructionIndex() +
+                      ") with instruction " + instructions[i] + " at aIndex " + i));
         }
       }
       if (instructions[i] instanceof SSAPiInstruction) {
@@ -234,24 +242,26 @@ public class InducedCFG extends AbstractCFG<SSAInstruction, InducedCFG.BasicBloc
 
     @Override
     public void visitGoto(SSAGotoInstruction instruction) {
-      Assertions.UNREACHABLE("haven't implemented logic for goto yet.");
-      breakBasicBlock(index);
+      if (DEBUG) { System.err.println("Breaking Basic block after instruction " + instruction + " index " + index); }
+      breakBasicBlock(index);             // Breaks __after__ the GoTo-Instruction
+      final int jumpTarget = getIndexFromIIndex(instruction.getTarget());
+      assert(instructions[jumpTarget] != null) : "GoTo cant go to null";
+      if (DEBUG) { System.err.println("Breaking Basic block before instruction " + instructions[jumpTarget] + " index " + jumpTarget + " -1"); }
+      breakBasicBlock(jumpTarget - 1);    // Breaks __before__ the target
     }
 
     @Override
     public void visitConditionalBranch(SSAConditionalBranchInstruction instruction) {
-      Assertions.UNREACHABLE("haven't implemented logic for cbranch yet.");
       breakBasicBlock(index);
     }
 
     @Override
     public void visitSwitch(SSASwitchInstruction instruction) {
-      Assertions.UNREACHABLE("haven't implemented logic for switch yet.");
-      // breakBasicBlock();
-      // int[] targets = instruction.getTargets();
-      // for (int i = 0; i < targets.length; i++) {
-      // r[targets[i]] = true;
-      // }
+      breakBasicBlock(index);
+      int[] targets = instruction.getCasesAndLabels();
+      for (int i = 1; i < targets.length; i+=2) {
+        r[targets[i]] = true;
+      }
     }
 
     @Override
@@ -424,6 +434,12 @@ public class InducedCFG extends AbstractCFG<SSAInstruction, InducedCFG.BasicBloc
      * @param last the last instruction in a basic block.
      */
     private void addExceptionalEdges(SSAInstruction last) {
+      if (last == null) {
+        // XXX: Bug here?
+        // throw new IllegalStateException("Missing last SSA-Instruction in basic block (null).");   // XXX: When does this happen?
+        System.err.println("Missing last SSA-Instruction in basic block (null).");
+        return;
+      }
       if (last.isPEI()) {
         // we don't currently model catch blocks here ... instead just link
         // to the exit block
@@ -442,26 +458,63 @@ public class InducedCFG extends AbstractCFG<SSAInstruction, InducedCFG.BasicBloc
     private void computeOutgoingEdges() {
 
       if (DEBUG) {
-        System.err.println(("Block " + this + ": computeOutgoingEdges()"));
+        System.err.println("Block " + this + ": computeOutgoingEdges()");
       }
-      // TODO: we don't currently model branches
 
       SSAInstruction last = getInstructions()[getLastInstructionIndex()];
       addExceptionalEdges(last);
-      // this CFG is odd in that we assume fallthru might always
-      // happen .. this is because I'm too lazy to code control
-      // flow in all method summaries yet.
+
+      if (last instanceof SSAGotoInstruction) {
+        int tgt = ((SSAGotoInstruction)last).getTarget();
+
+        if (tgt != -1) {
+          int tgtNd = getIndexFromIIndex(tgt);  // index in instructions-array
+          BasicBlock target = null;
+
+          for (Iterator it = InducedCFG.this.iterator(); it.hasNext();) {
+            final BasicBlock candid = (BasicBlock) it.next();
+            if (candid.getFirstInstructionIndex() == tgtNd) {
+              target = candid;
+              break;
+            }
+          }
+
+          if (target == null) {
+            System.err.println("Error retreiving the Node with IIndex " + tgt + " (in array at " + tgtNd + ")");
+            System.err.println("The associated Instruction " + instructions[tgtNd] + " does not start a basic block");
+            assert(false); // It will fail anyway
+          }
+
+          if (DEBUG) {
+            System.err.println("GOTO: Add additional CF " + last.iindex + " to " + tgt + " is node " + target);
+          }
+          addNormalEdgeTo(target);
+        }
+      }
+
       int normalSuccNodeNumber = getGraphNodeId() + 1;
-      if (true) {
-        // if (last.isFallThrough()) {
+      if (last.isFallThrough()) {
         if (DEBUG) {
           System.err.println(("Add fallthru to " + getNode(getGraphNodeId() + 1)));
         }
         addNormalEdgeTo(getNode(normalSuccNodeNumber));
       }
+      
+      if (last instanceof SSAGotoInstruction) {
+        addNormalEdgeTo(getBlockForInstruction(((SSAGotoInstruction)last).getTarget()));
+      } else if (last instanceof SSAConditionalBranchInstruction) {
+        addNormalEdgeTo(getBlockForInstruction(((SSAConditionalBranchInstruction)last).getTarget()));
+      } else if (last instanceof SSASwitchInstruction) {
+        int[] targets = ((SSASwitchInstruction) last).getCasesAndLabels();
+        for (int i = 1; i < targets.length; i+=2) {
+          addNormalEdgeTo(getBlockForInstruction(targets[i]));
+        }
+      }
+      
       if (pis != null) {
         updatePiInstrs(normalSuccNodeNumber);
       }
+      
       if (last instanceof SSAReturnInstruction) {
         // link each return instrution to the exit block.
         BasicBlock exit = exit();
@@ -477,7 +530,7 @@ public class InducedCFG extends AbstractCFG<SSAInstruction, InducedCFG.BasicBloc
       for (int i = 0; i < pis.size(); i++) {
         SSAPiInstruction pi = pis.get(i);
         SSAInstructionFactory insts = getMethod().getDeclaringClass().getClassLoader().getInstructionFactory();
-        pis.set(i, insts.PiInstruction(pi.getDef(), pi.getVal(), getGraphNodeId(), normalSuccNodeNumber, pi.getCause()));
+        pis.set(i, insts.PiInstruction(SSAInstruction.NO_INDEX, pi.getDef(), pi.getVal(), getGraphNodeId(), normalSuccNodeNumber, pi.getCause()));
       }
     }
 
@@ -600,6 +653,46 @@ public class InducedCFG extends AbstractCFG<SSAInstruction, InducedCFG.BasicBloc
     } else {
       return index;
     }
+  }
+
+  /**
+   * Get the position of a instruction with a given iindex in the internal list.
+   *
+   * @param     iindex  The iindex used when generating the SSAInstruction
+   * @return    index into the internal list of instructions
+   * @throws    IllegalStateException if no instruction exists with iindex or it's not in the internal array (Phi)
+   */
+  public int getIndexFromIIndex(int iindex) {
+    if (iindex <= 0) {
+      throw new IllegalArgumentException("The iindex may not be negative (is " + iindex + ". Method: " + getMethod() + ", Contenxt: " + this.context);
+    }
+
+    final SSAInstruction[] instructions = getInstructions();
+    if (instructions == null) {
+      throw new IllegalStateException("This CFG contains no Instructions? " + getMethod() + ", Contenxt: " + this.context);
+    }
+    for (int i=0; i < instructions.length; ++i) {
+      if (instructions[i] == null) {
+        // There are holes in the instructions array ?!
+        // Perhaps from Phi-functions?
+        if (DEBUG) {
+          System.err.println("The " + i +"th instrction is null! Mathod: " + getMethod());
+          if (i > 0) {
+            System.err.println("  Instuction before is: " + instructions[i - 1]);
+          }
+          if (i < instructions.length - 1) {
+            System.err.println("  Instuction after is: " + instructions[i + 1]);
+          }
+        }
+        continue;
+      }
+      if (instructions[i].iindex == iindex) {
+        return i;
+      }
+    }
+
+    throw new IllegalStateException("The searched iindex (" + iindex + ") does not exist! In " + 
+            getMethod() + ", Contenxt: " + this.context);
   }
 
   public Collection<SSAPhiInstruction> getAllPhiInstructions() {

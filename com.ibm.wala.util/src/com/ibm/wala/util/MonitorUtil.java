@@ -22,8 +22,17 @@ public class MonitorUtil {
    */
   public interface IProgressMonitor {
 
+    /** Constant indicating an unknown amount of work. */
+    public static final int UNKNOWN = -1;
+
     void beginTask(String task, int totalWork);
 
+/** BEGIN Custom change: subtasks and canceling */
+    void subTask(String subTask);
+
+    void cancel();
+
+/** END Custom change: subtasks and canceling */
     boolean isCanceled();
 
     void done();
@@ -63,10 +72,35 @@ public class MonitorUtil {
   public static void throwExceptionIfCanceled(IProgressMonitor progressMonitor) throws CancelException {
     if (progressMonitor != null) {
       if (progressMonitor.isCanceled()) {
-        throw CancelException.make("operation cancelled");
+        throw CancelException.make(progressMonitor.getCancelMessage());
       }
     }
   }
+/** BEGIN Custom change: more on subtasks */
+
+  public static void subTask(IProgressMonitor progressMonitor, String subTask) throws CancelException {
+    if (progressMonitor != null) {
+      progressMonitor.subTask(subTask);
+      if (progressMonitor.isCanceled()) {
+        throw CancelException.make("cancelled in " + subTask);
+      }
+    }
+  }
+
+  public static boolean isCanceled(IProgressMonitor progressMonitor) {
+    if (progressMonitor == null) {
+      return false;
+    } else {
+      return progressMonitor.isCanceled();
+    }
+  }
+  
+  public static void cancel(IProgressMonitor progress) {
+    if (progress != null) {
+      progress.cancel();
+    }
+  }
+/** END Custom change: more on subtasks */
 
 //  public static IProgressMonitor subProgress(ProgressMaster progress, int i) {
 //    if (progress == null) {

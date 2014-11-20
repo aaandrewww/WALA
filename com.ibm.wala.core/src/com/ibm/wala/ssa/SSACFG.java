@@ -19,10 +19,10 @@ import java.util.Map;
 import java.util.Set;
 
 import com.ibm.wala.cfg.AbstractCFG;
+import com.ibm.wala.cfg.BytecodeCFG;
 import com.ibm.wala.cfg.ControlFlowGraph;
 import com.ibm.wala.cfg.IBasicBlock;
 import com.ibm.wala.cfg.InducedCFG;
-import com.ibm.wala.cfg.ShrikeCFG;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IClassLoader;
 import com.ibm.wala.classLoader.IMethod;
@@ -107,8 +107,8 @@ public class SSACFG implements ControlFlowGraph<SSAInstruction, ISSABasicBlock> 
       addPhisFromInducedCFG((InducedCFG) cfg);
       addPisFromInducedCFG((InducedCFG) cfg);
     }
-    if (cfg instanceof ShrikeCFG) {
-      recordExceptionTypes(((ShrikeCFG) cfg).getExceptionHandlers(), method.getDeclaringClass().getClassLoader());
+    if (cfg instanceof BytecodeCFG) {
+      recordExceptionTypes(((BytecodeCFG) cfg).getExceptionHandlers(), method.getDeclaringClass().getClassLoader());
     }
     this.instructions = instructions;
 
@@ -449,7 +449,7 @@ public class SSACFG implements ControlFlowGraph<SSAInstruction, ISSABasicBlock> 
       }
     }
 
-    SSAPiInstruction getPiForRefAndPath(int n, Object path) {
+    public SSAPiInstruction getPiForRefAndPath(int n, Object path) {
       return piInstructions.get(new RefPathKey(n, this, path));
     }
 
@@ -461,7 +461,7 @@ public class SSACFG implements ControlFlowGraph<SSAInstruction, ISSABasicBlock> 
      * @param path can be the successor block in the pi instruction
      * @param pi
      */
-    void addPiForRefAndPath(int n, Object path, SSAPiInstruction pi) {
+    public void addPiForRefAndPath(int n, Object path, SSAPiInstruction pi) {
       piInstructions.put(new RefPathKey(n, this, path), pi);
       blockPiInstructions.add(pi);
     }

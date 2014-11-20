@@ -54,9 +54,9 @@ import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.callgraph.propagation.PointerKey;
 import com.ibm.wala.ipa.callgraph.propagation.SSAPropagationCallGraphBuilder;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
-import com.ibm.wala.ssa.DefUse;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.ISSABasicBlock;
+import com.ibm.wala.ssa.SSAAbstractInvokeInstruction;
 import com.ibm.wala.ssa.SSAArrayLengthInstruction;
 import com.ibm.wala.ssa.SSAArrayLoadInstruction;
 import com.ibm.wala.ssa.SSAArrayStoreInstruction;
@@ -143,17 +143,11 @@ public class DemandValueFlowGraph extends AbstractDemandFlowGraph {
      */
     protected final SymbolTable symbolTable;
 
-    /**
-     * Def-use information
-     */
-    protected final DefUse du;
-
     public AllValsStatementVisitor(CGNode node) {
       this.node = node;
       this.ir = node.getIR();
       this.symbolTable = ir.getSymbolTable();
       assert symbolTable != null;
-      this.du = node.getDU();
     }
 
     /*
@@ -304,7 +298,7 @@ public class DemandValueFlowGraph extends AbstractDemandFlowGraph {
         // from the callee
         PointerKey use = heapModel.getPointerKeyForLocal(node, instruction.getUse(i));
         addNode(use);
-        Set<SSAInvokeInstruction> s = MapUtil.findOrCreateSet(callParams, use);
+        Set<SSAAbstractInvokeInstruction> s = MapUtil.findOrCreateSet(callParams, use);
         s.add(instruction);
       }
 

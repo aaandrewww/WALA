@@ -20,14 +20,14 @@ import com.ibm.wala.util.intset.OrdinalSetMapping;
 /**
  * Abstract definition of pointer analysis
  */
-public interface PointerAnalysis {
+public interface PointerAnalysis<T extends InstanceKey> {
   
   /**
    * @param key representative of an equivalence class of pointers
    * @return Set of InstanceKey, representing the instance abstractions that define
    * the points-to set computed for the pointer key
    */
-  OrdinalSet<? extends InstanceKey> getPointsToSet(PointerKey key);
+  OrdinalSet<T> getPointsToSet(PointerKey key);
 
   /**
    * @return an Object that determines how to model abstract locations in the heap.
@@ -37,13 +37,13 @@ public interface PointerAnalysis {
   /**
    * @return a graph view of the pointer analysis solution
    */
-  HeapGraph getHeapGraph();
+  HeapGraph<T> getHeapGraph();
   
   /**
    * @return the bijection between InstanceKey <=> Integer that defines the
    * interpretation of points-to-sets.
    */
-  OrdinalSetMapping<InstanceKey> getInstanceKeyMapping();
+  OrdinalSetMapping<T> getInstanceKeyMapping();
 
   /**
    * @return all pointer keys known
@@ -54,7 +54,7 @@ public interface PointerAnalysis {
   /**
    * @return all instance keys known
    */
-  Collection<InstanceKey> getInstanceKeys();
+  Collection<T> getInstanceKeys();
 
   /**
    * did the pointer analysis use a type filter for a given points-to set?

@@ -1,3 +1,14 @@
+/******************************************************************************
+ * Copyright (c) 2002 - 2014 IBM Corporation.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *     IBM Corporation - initial API and implementation
+ *****************************************************************************/
+
 /**
  * 
  */
@@ -207,7 +218,7 @@ public class PolyglotIdentityMapper implements IdentityMapper<Type, CodeInstance
   }
 
   public String anonLocalTypeToTypeID(ClassType ctype) {
-    CodeInstance procInstance= (CodeInstance) fLocalTypeMap.get(ctype);
+    CodeInstance procInstance= fLocalTypeMap.get(ctype);
 
     String outerTypeID= typeToTypeID(ctype.outer());
     String shortName= (ctype.isAnonymous()) ? PolyglotJava2CAstTranslator.anonTypeName(ctype) : ctype.fullName().name().toString();

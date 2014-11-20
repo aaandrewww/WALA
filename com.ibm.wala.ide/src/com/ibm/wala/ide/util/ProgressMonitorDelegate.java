@@ -51,6 +51,17 @@ public class ProgressMonitorDelegate implements IProgressMonitor {
     delegate.worked(units);
   }
 
+/** BEGIN Custom change: subtasks and canceling */
+  @Override
+  public void subTask(String subTask) {
+    delegate.subTask(subTask);
+  }
+
+  @Override
+  public void cancel() {
+    delegate.setCanceled(true);
+  }
+/** END Custom change: subtasks and canceling */
   @Override
   public String getCancelMessage() {
     return "cancelled by eclipse monitor: " + delegate.toString();

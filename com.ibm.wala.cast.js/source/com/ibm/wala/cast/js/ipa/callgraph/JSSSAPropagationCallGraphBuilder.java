@@ -16,6 +16,7 @@ import java.util.Set;
 
 import com.ibm.wala.analysis.typeInference.TypeInference;
 import com.ibm.wala.cast.ipa.callgraph.AstSSAPropagationCallGraphBuilder;
+import com.ibm.wala.cast.ipa.callgraph.ReflectedFieldPointerKey;
 import com.ibm.wala.cast.ir.ssa.AstGlobalRead;
 import com.ibm.wala.cast.ir.ssa.AstGlobalWrite;
 import com.ibm.wala.cast.ir.ssa.AstIsDefinedInstruction;
@@ -169,11 +170,30 @@ public class JSSSAPropagationCallGraphBuilder extends AstSSAPropagationCallGraph
         || "class".equals(fieldName) || "$value".equals(fieldName) || "__proto__".equals(fieldName);
   }
 
+  @Override
+  protected AbstractFieldPointerKey fieldKeyForUnknownWrites(AbstractFieldPointerKey fieldKey) {
+    // TODO: fix this.  null is wrong.
+    return null;
+    // return ReflectedFieldPointerKey.mapped(new ConcreteTypeKey(cha.lookupClass(JavaScriptTypes.String)), fieldKey.getInstanceKey());
+  }
+
   // ///////////////////////////////////////////////////////////////////////////
   //
   // top-level node constraint generation
   //
   // ///////////////////////////////////////////////////////////////////////////
+
+  private final static FieldReference prototypeRef;
+  static {
+    FieldReference x = null;
+    try {
+      byte[] utf8 = "__proto__".getBytes("UTF-8");
+      x = FieldReference.findOrCreate(JavaScriptTypes.Root, Atom.findOrCreate(utf8, 0, utf8.length), JavaScriptTypes.Root);
+    } catch (UnsupportedEncodingException e) {
+      assert false;
+    }
+    prototypeRef = x;
+  }
 
   private final GlobalObjectKey globalObject = new GlobalObjectKey(cha.lookupClass(JavaScriptTypes.Object));
 
@@ -280,7 +300,7 @@ public class JSSSAPropagationCallGraphBuilder extends AstSSAPropagationCallGraph
   //
   // ///////////////////////////////////////////////////////////////////////////
 
-  public static class JSPointerAnalysisImpl extends AstPointerAnalysisImpl {
+  public static class JSPointerAnalysisImpl extends AstSSAPropagationCallGraphBuilder.AstPointerAnalysisImpl {
 
     JSPointerAnalysisImpl(PropagationCallGraphBuilder builder, CallGraph cg, PointsToMap pointsToMap,
         MutableMapping<InstanceKey> instanceKeys, PointerKeyFactory pointerKeys, InstanceKeyFactory iKeyFactory) {
@@ -369,7 +389,7 @@ public class JSSSAPropagationCallGraphBuilder extends AstSSAPropagationCallGraph
   protected PropagationSystem makeSystem(AnalysisOptions options) {
     return new PropagationSystem(callGraph, pointerKeyFactory, instanceKeyFactory) {
       @Override
-      public PointerAnalysis makePointerAnalysis(PropagationCallGraphBuilder builder) {
+      public PointerAnalysis<InstanceKey> makePointerAnalysis(PropagationCallGraphBuilder builder) {
         return new JSPointerAnalysisImpl(builder, cg, pointsToMap, instanceKeys, pointerKeyFactory, instanceKeyFactory);
       }
     };
@@ -913,19 +933,7 @@ public class JSSSAPropagationCallGraphBuilder extends AstSSAPropagationCallGraph
       }
       
     };
-    
-    private final FieldReference prototypeRef;
-    {
-      FieldReference x = null;
-      try {
-        byte[] utf8 = "__proto__".getBytes("UTF-8");
-        x = FieldReference.findOrCreate(JavaScriptTypes.Root, Atom.findOrCreate(utf8, 0, utf8.length), JavaScriptTypes.Root);
-      } catch (UnsupportedEncodingException e) {
-        assert false;
-      }
-      prototypeRef = x;
-    }
-    
+        
     @Override
     public void visitSetPrototype(SetPrototype instruction) {
       visitPutInternal(instruction.getUse(1), instruction.getUse(0), false, prototypeRef);

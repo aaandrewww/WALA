@@ -12,14 +12,12 @@ package com.ibm.wala.shrikeBT.tools;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -29,6 +27,9 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+
+import com.ibm.wala.shrikeBT.analysis.ClassHierarchyProvider;
 
 /**
  * This class provides functionality for performing offline instrumentation. It is subclassed with class-toolkit-specific
@@ -55,6 +56,8 @@ public abstract class OfflineInstrumenterBase {
 
   private ManifestBuilder manifestBuilder;
 
+  protected ClassHierarchyProvider cha;
+  
   /**
    * This installs a ManifestBuilder callback that this class will notify whenever an entry has been added to the output zip file.
    */
@@ -202,8 +205,13 @@ public abstract class OfflineInstrumenterBase {
   }
 
   protected OfflineInstrumenterBase() {
+
   }
 
+  public void setClassHierarchyProvider(ClassHierarchyProvider cha) {
+    this.cha = cha;
+  }
+  
   /**
    * Set the file in which instrumented classes will be deposited.
    */

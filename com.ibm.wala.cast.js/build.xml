@@ -43,8 +43,7 @@
     <unzip src="${temp.folder}/jericho-html-3.2.zip" dest="${temp.folder}"/>
     <copy file="${temp.folder}/jericho-html-3.2/dist/jericho-html-3.2.jar" tofile="${plugin.destination}/lib/jericho-html-3.2.jar" />
     <delete dir="${temp.folder}"/>
-  </target>
-  
+  </target>  
   
   <target name="getJars" depends="fetchJericho" />
   

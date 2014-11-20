@@ -21,6 +21,7 @@ Export-Package: .,
  com.ibm.wala.cast.js.ipa.callgraph,
  com.ibm.wala.cast.js.ipa.callgraph.correlations,
  com.ibm.wala.cast.js.ipa.callgraph.correlations.extraction,
+ com.ibm.wala.cast.js.ipa.modref,
  com.ibm.wala.cast.js.ipa.summaries,
  com.ibm.wala.cast.js.loader,
  com.ibm.wala.cast.js.ssa,
@@ -36,4 +37,4 @@ Require-Bundle: com.ibm.wala.cast,
  org.eclipse.core.runtime;bundle-version="3.4.0",
  org.apache.commons.logging
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7

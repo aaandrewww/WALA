@@ -20,10 +20,15 @@ import com.ibm.wala.types.TypeReference;
  */
 public abstract class SSAInstruction {
 
+  public static final int NO_INDEX = -1;
+  
+  public final int iindex;
+  
   /**
    * prevent instantiation by the outside
    */
-  protected SSAInstruction() {
+  protected SSAInstruction(int iindex) {
+    this.iindex = iindex;
   }
 
   /**
@@ -285,6 +290,11 @@ public abstract class SSAInstruction {
    */
   @Override
   public final boolean equals(Object obj) {
-    return this == obj;
+    if (this == obj)
+      return true;
+    if (obj != null && obj instanceof SSAInstruction)
+      return this.iindex == ((SSAInstruction) obj).iindex;
+    else
+      return false;
   }
 }
